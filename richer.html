@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlavorWire v5.2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Tahoma,Arial,sans-serif;font-size:11px;background:#3a7ebf;overflow:hidden;height:100vh;width:100vw;}
+
+/* DESKTOP */
+#desktop{position:fixed;inset:0 0 34px 0;background:linear-gradient(to bottom,#1e6ab2 0%,#5ab4e0 42%,#78c8d0 52%,#52b840 57%,#2e8228 100%);z-index:0;}
+#desktop-icons{position:absolute;top:16px;left:16px;display:flex;flex-direction:column;gap:16px;}
+.d-icon{width:72px;text-align:center;cursor:pointer;padding:4px 2px;border-radius:3px;color:#fff;}
+.d-icon:hover{background:rgba(255,255,255,.18);}
+.d-icon.sel{background:rgba(49,106,197,.55);outline:1px dotted #fff;}
+.d-icon .di{font-size:36px;line-height:42px;display:block;filter:drop-shadow(1px 2px 4px rgba(0,0,0,.55));}
+.d-icon .dl{font-size:10px;text-shadow:1px 1px 2px #000,-1px -1px 2px #000;margin-top:3px;line-height:1.35;word-break:break-word;}
+
+/* TASKBAR */
+#taskbar{position:fixed;bottom:0;left:0;right:0;height:34px;background:linear-gradient(to bottom,#245ddc 0%,#1040c4 100%);border-top:2px solid #0831d9;display:flex;align-items:center;padding:0 6px;gap:4px;z-index:9000;}
+#start-btn{background:linear-gradient(to bottom,#5ab030,#2a7808);color:#fff;font-weight:bold;font-size:12px;border:1px solid #1a5008;border-radius:12px;padding:3px 14px 3px 10px;cursor:pointer;font-family:Tahoma;white-space:nowrap;}
+.tb-btn{background:linear-gradient(to bottom,#1a50d8,#0e40c0);border:1px solid #0030a0;border-radius:3px;color:#fff;font-size:11px;padding:0 10px;height:26px;cursor:pointer;font-family:Tahoma;display:none;align-items:center;gap:4px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tb-btn.vis{display:flex;}
+.tb-btn.act{background:linear-gradient(to bottom,#0e40c0,#1a50d8);border-color:#6090e0;}
+#tb-clock{margin-left:auto;color:#fff;font-size:11px;padding:2px 10px;border:1px solid rgba(255,255,255,.2);border-radius:2px;background:rgba(0,0,0,.15);white-space:nowrap;}
+
+/* TOAST */
+#toast{position:fixed;bottom:48px;right:18px;background:rgba(0,0,0,.88);color:#fff;padding:9px 16px;border-radius:6px;font-size:12px;z-index:99999;display:none;border:1px solid #555;box-shadow:2px 2px 12px rgba(0,0,0,.6);}
+
+/* XP WINDOW BASE */
+.xp-win{position:fixed;display:flex;flex-direction:column;background:#ece9d8;border:3px solid #0054e3;border-radius:8px 8px 4px 4px;box-shadow:3px 3px 16px rgba(0,0,0,.7),inset 0 0 0 1px #6b9bde;overflow:hidden;z-index:100;min-width:320px;}
+.xp-win.hidden{display:none!important;}
+.xp-win.front{z-index:500;}
+
+/* TITLE BAR */
+.titlebar{background:linear-gradient(to bottom,#4d9bff 0%,#1159e8 7%,#1254e2 40%,#0f4fd8 50%,#0a42c2 90%,#0d47cc 100%);color:#fff;padding:5px 6px 4px 8px;display:flex;align-items:center;justify-content:space-between;min-height:30px;cursor:default;flex-shrink:0;border-radius:6px 6px 0 0;user-select:none;}
+.xp-win.hidden .titlebar,.xp-win[style*="border-radius: 0"] .titlebar{border-radius:0;}
+.tb-left{display:flex;align-items:center;gap:6px;font-weight:bold;font-size:12px;text-shadow:1px 1px 2px rgba(0,0,0,.6);pointer-events:none;overflow:hidden;white-space:nowrap;}
+.tb-ico{width:18px;height:18px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.wbtns{display:flex;gap:2px;flex-shrink:0;}
+.wb{width:21px;height:21px;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:bold;border:1px solid rgba(0,0,0,.4);color:#fff;font-size:11px;user-select:none;}
+.wb.min,.wb.max{background:linear-gradient(to bottom,#78b4f8,#2d6bc8);}
+.wb.max{width:23px;}
+.wb.cls{background:linear-gradient(to bottom,#f87070,#b81010);width:23px;}
+.wb:hover{filter:brightness(1.2);}
+.wb:active{filter:brightness(.8);}
+
+/* DIALOG OVERLAY */
+.dlg-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99000;align-items:center;justify-content:center;}
+.dlg-bg.show{display:flex;}
+.xp-dlg{background:#ece9d8;border:3px solid #0054e3;border-radius:8px 8px 4px 4px;box-shadow:4px 4px 16px rgba(0,0,0,.7);width:340px;max-width:95vw;overflow:hidden;}
+.dlg-body{padding:16px;display:flex;gap:14px;align-items:flex-start;font-size:11px;line-height:1.65;}
+.dlg-body .big{font-size:32px;flex-shrink:0;}
+.dlg-foot{padding:8px 12px;background:linear-gradient(to bottom,#f0ece0,#dddbd0);border-top:1px solid #aca899;display:flex;justify-content:center;gap:8px;}
+.xp-btn{background:linear-gradient(to bottom,#fdfcf8,#dddbd0);border:1px solid #aca899;border-top-color:#fff;border-left-color:#fff;padding:4px 20px;cursor:pointer;font-family:Tahoma;font-size:11px;border-radius:3px;min-width:75px;}
+.xp-btn:hover{background:linear-gradient(to bottom,#fffbe8,#ffd888);border-color:#f5a000;}
+
+/* ===== FLAVORWIRE CONTENT ===== */
+#fw-win{top:20px;left:20px;width:800px;height:520px;resize:both;}
+#fw-win .inner{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;}
+
+.banner{text-align:center;padding:5px 10px;font-size:11px;font-weight:bold;cursor:pointer;border-bottom:2px solid #ff6600;animation:blink 2s step-start infinite;line-height:1.5;flex-shrink:0;}
+@keyframes blink{50%{opacity:.55;}}
+
+.menubar{background:#ece9d8;border-bottom:1px solid #aca899;padding:1px 2px;display:flex;flex-shrink:0;}
+.mi{padding:3px 8px;cursor:pointer;border-radius:3px;}
+.mi:hover{background:#316ac5;color:#fff;}
+
+.toolbar{background:linear-gradient(to bottom,#f5f4ee,#dddbd0);border-bottom:1px solid #aca899;padding:3px 5px;display:flex;align-items:center;gap:3px;flex-wrap:wrap;flex-shrink:0;}
+.tbtn{background:linear-gradient(to bottom,#fdfcf8,#ece9d8);border:1px solid #aca899;border-top-color:#fff;border-left-color:#fff;padding:3px 9px;cursor:pointer;font-size:11px;font-family:Tahoma;border-radius:3px;white-space:nowrap;}
+.tbtn:hover{background:linear-gradient(to bottom,#fffbe8,#ffecc8);border-color:#f5a000;}
+.tsep{width:1px;background:#aca899;height:22px;margin:0 3px;}
+.srchbar{display:flex;align-items:center;gap:4px;margin-left:auto;}
+.srchbar input{border:2px solid #7f9db9;border-right-color:#c8d8e8;border-bottom-color:#c8d8e8;background:#fff;padding:2px 5px;font-size:11px;font-family:Tahoma;width:145px;}
+.srchbar input:focus{outline:none;border-color:#0054e3;}
+
+.fw-body{display:flex;flex:1;overflow:hidden;min-height:0;}
+
+.sidebar{width:130px;background:linear-gradient(to bottom,#6b9fcf,#3a6ea8);border-right:1px solid #aca899;overflow-y:auto;flex-shrink:0;}
+.sbh{background:linear-gradient(to bottom,#2060b0,#1a4a8a);color:#fff;padding:5px 10px;font-weight:bold;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-top:1px solid #4888cc;border-bottom:1px solid #1040a0;}
+.sbi{padding:5px 8px 5px 12px;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:11px;color:#ddeeff;border-bottom:1px solid rgba(255,255,255,.08);text-shadow:0 1px 2px rgba(0,0,0,.5);}
+.sbi:hover{background:rgba(255,255,255,.2);color:#fff;}
+.sbi.act{background:rgba(255,255,255,.25);color:#fff;font-weight:bold;border-left:3px solid #ffcc00;}
+
+.content{flex:1;background:#fff;display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+
+.tabs{display:flex;background:linear-gradient(to bottom,#e6e4da,#d4d0c4);border-bottom:2px solid #0054e3;padding:4px 4px 0;gap:2px;flex-shrink:0;}
+.tab{padding:4px 14px 5px;cursor:pointer;font-size:11px;background:linear-gradient(to bottom,#d0cdc4,#bbb8b0);border:1px solid #aca899;border-bottom:none;border-radius:4px 4px 0 0;color:#444;}
+.tab.act{background:#fff;color:#000;font-weight:bold;border-color:#0054e3;border-bottom:2px solid #fff;margin-bottom:-2px;z-index:1;}
+
+.panel{display:none;flex-direction:column;flex:1;overflow:auto;}
+.panel.act{display:flex;}
+
+.ftbl{width:100%;border-collapse:collapse;font-size:11px;}
+.ftbl th{background:linear-gradient(to bottom,#f0ece0,#ddd9cc);border:1px solid #aca899;padding:4px 8px;text-align:left;font-weight:bold;white-space:nowrap;}
+.ftbl td{border-bottom:1px solid #e0ddd5;border-right:1px solid #edeae0;padding:4px 8px;white-space:nowrap;}
+.ftbl tr:nth-child(even) td{background:#f7f5f0;}
+.ftbl tr:hover td{background:#dbeeff;cursor:pointer;}
+.ftbl tr.sel td{background:linear-gradient(to bottom,#316ac5,#2356aa);color:#fff;}
+.fname{color:#00008b;text-decoration:underline;}
+.ftbl tr.sel .fname{color:#adf;}
+
+.prog-c{background:#c8d8e8;border:1px solid #7f9db9;border-right-color:#c8d8e8;border-bottom-color:#c8d8e8;height:13px;width:80px;display:inline-block;vertical-align:middle;}
+.prog-f{height:100%;background:linear-gradient(to bottom,#71cc35,#2d7008);transition:width .3s linear;}
+.prog-f.tx{background:linear-gradient(to bottom,#7ab8f5,#1560bb);}
+
+.seclbl{background:linear-gradient(to bottom,#2060b0,#1a4a8a);color:#fff;padding:4px 8px;font-weight:bold;font-size:10px;flex-shrink:0;}
+.actbtns{display:flex;gap:5px;padding:6px 8px;background:linear-gradient(to bottom,#f0ece0,#dddbd0);border-top:1px solid #aca899;flex-wrap:wrap;flex-shrink:0;}
+.abtn{background:linear-gradient(to bottom,#fdfcf8,#cac7ba);border:1px solid #aca899;border-top-color:#fff;border-left-color:#fff;padding:4px 14px;cursor:pointer;font-family:Tahoma;font-size:11px;border-radius:3px;min-width:75px;text-align:center;}
+.abtn:hover{background:linear-gradient(to bottom,#fffbe8,#ffd888);border-color:#f5a000;}
+.abtn.p{background:linear-gradient(to bottom,#73c04f,#2a7010);color:#fff;border-color:#2a7010;font-weight:bold;}
+.abtn.p:hover{filter:brightness(1.1);}
+
+.statbar{background:linear-gradient(to bottom,#f0ece0,#e0ddd0);border-top:1px solid #aca899;padding:2px 4px;display:flex;justify-content:space-between;font-size:10px;gap:3px;flex-wrap:wrap;flex-shrink:0;}
+.sp{border:1px solid #aca899;border-top-color:#7a7a6a;border-left-color:#7a7a6a;padding:1px 8px;background:#ece9d8;}
+.led{display:inline-block;width:8px;height:8px;background:radial-gradient(circle at 35% 35%,#80ff80,#00cc00);border-radius:50%;margin-right:4px;vertical-align:middle;box-shadow:0 0 4px #00cc00;}
+.empty{text-align:center;color:#999;padding:18px;font-style:italic;}
+.badge-done{display:inline-block;background:linear-gradient(to bottom,#54a010,#2d6b01);color:#fff;border:1px solid #1a5000;border-radius:2px;padding:1px 5px;font-size:9px;font-weight:bold;vertical-align:middle;}
+.dl-hint{font-size:10px;color:#555;padding:4px 8px;background:#f5f4ee;border-bottom:1px solid #ddd;flex-shrink:0;}
+
+/* ===== PLAYER CONTENT ===== */
+#player-win{top:60px;left:840px;width:360px;}
+.player-body{background:#0d0d1c;padding:12px;display:flex;flex-direction:column;gap:10px;flex:1;overflow:hidden;}
+.art{width:100%;aspect-ratio:1;background:linear-gradient(135deg,#08081a,#141428);border:2px solid #222a44;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:52px;position:relative;overflow:hidden;flex-shrink:0;}
+.art-scan{position:absolute;top:0;left:-80%;width:55%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);animation:scan 4s linear infinite;}
+@keyframes scan{to{left:140%;}}
+.art-glow{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 100%,rgba(0,110,255,.12),transparent 70%);}
+.sinfo{text-align:center;}
+.stitle{color:#00ccff;font-size:12px;font-weight:bold;font-family:'Courier New',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sartist{color:#6a8a9e;font-size:10px;margin-top:2px;}
+.smeta{color:#384858;font-size:9px;margin-top:1px;font-family:'Courier New',monospace;}
+.viz{display:flex;align-items:flex-end;justify-content:center;height:26px;gap:2px;}
+.vb{width:8px;background:linear-gradient(to top,#0088cc,#00ccff);border-radius:2px 2px 0 0;min-height:2px;}
+.seek-wrap{position:relative;display:flex;align-items:center;height:18px;}
+.seek-fill{position:absolute;left:0;top:50%;transform:translateY(-50%);height:6px;background:linear-gradient(to right,#0070bb,#00ccff);border-radius:3px;pointer-events:none;z-index:0;}
+input.seekbar{-webkit-appearance:none;appearance:none;width:100%;height:6px;background:#192840;border-radius:3px;cursor:pointer;outline:none;border:1px solid #0e1e2e;position:relative;z-index:1;}
+input.seekbar::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:radial-gradient(circle at 38% 32%,#88ddff,#0088cc);border-radius:50%;border:1px solid #0066aa;cursor:pointer;box-shadow:0 0 6px rgba(0,160,255,.6);}
+input.seekbar::-moz-range-thumb{width:14px;height:14px;background:#0088cc;border-radius:50%;border:1px solid #0066aa;cursor:pointer;}
+.seek-times{display:flex;justify-content:space-between;font-size:10px;color:#5a7a8e;font-family:'Courier New',monospace;margin-top:2px;}
+.controls{display:flex;align-items:center;justify-content:center;gap:8px;}
+.cbtn{background:linear-gradient(to bottom,#1c2c4e,#111c38);border:1px solid #28405e;border-radius:4px;color:#6090b0;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.cbtn:hover{background:linear-gradient(to bottom,#284070,#182e58);color:#aaccee;border-color:#4878a8;}
+.playbtn{width:46px;height:46px;font-size:20px;background:linear-gradient(to bottom,#1e6a28,#104018);border-color:#3a8840;color:#70ee80;box-shadow:0 0 10px rgba(0,170,50,.22);}
+.playbtn:hover{background:linear-gradient(to bottom,#2a8a38,#185820);color:#aaff99;}
+.playbtn.playing{background:linear-gradient(to bottom,#6a1818,#3e0e0e);border-color:#882828;color:#ffaaaa;box-shadow:0 0 10px rgba(190,0,0,.28);}
+.vol-row{display:flex;align-items:center;gap:7px;}
+.vl{color:#384858;font-size:11px;}
+input.volbar{-webkit-appearance:none;appearance:none;flex:1;height:4px;background:#192840;border-radius:2px;cursor:pointer;outline:none;}
+input.volbar::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;background:#5580a8;border-radius:50%;cursor:pointer;}
+input.volbar::-moz-range-thumb{width:11px;height:11px;background:#5580a8;border-radius:50%;border:none;}
+.pfoot{display:flex;justify-content:space-between;padding:4px 8px;background:#08080e;border-top:1px solid #181c2c;font-size:9px;color:#2c3c4c;font-family:'Courier New',monospace;flex-shrink:0;}
+.pled{display:inline-block;width:6px;height:6px;background:#181c2c;border-radius:50%;margin-right:4px;vertical-align:middle;}
+.pled.on{background:radial-gradient(circle at 35% 35%,#80ff80,#00cc00);box-shadow:0 0 4px #00cc00;}
+.nosong{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#253545;padding:20px;text-align:center;}
+.nosong .ni{font-size:40px;opacity:.3;}
+</style>
+</head>
+<body>
+
+<!-- ERR 52 DIALOG -->
+<div class="dlg-bg" id="dlgErr">
+  <div class="xp-dlg">
+    <div class="titlebar">
+      <div class="tb-left"><div class="tb-ico">⚠️</div>FlavorWire v5.2 — Fatal Error</div>
+      <div class="wbtns"><div class="wb cls" onclick="hide('dlgErr')">✕</div></div>
+    </div>
+    <div class="dlg-body">
+      <div class="big">❌</div>
+      <div><strong>Error 52</strong><br><br>FlavorWire has encountered an unrecoverable error and cannot complete this operation.<br><br><span style="color:#880000;font-family:monospace;font-size:10px">EXCEPTION_CODE: 0x00000034<br>ERR_52_UNKNOWN_FATAL</span></div>
+    </div>
+    <div class="dlg-foot"><button class="xp-btn" onclick="hide('dlgErr')">OK</button></div>
+  </div>
+</div>
+
+<!-- DESKTOP -->
+<div id="desktop">
+  <div id="desktop-icons">
+    <div class="d-icon" id="ico-player" ondblclick="openPlayer()" onclick="selIcon('ico-player')">
+      <span class="di">🎵</span>
+      <span class="dl">FlavorWire Player</span>
+    </div>
+    <div class="d-icon" id="ico-song" style="display:none" ondblclick="openPlayerWithSong()" onclick="selIcon('ico-song')">
+      <span class="di">🎧</span>
+      <span class="dl" id="ico-song-lbl">Chickahhhn_PPxLL</span>
+    </div>
+  </div>
+</div>
+
+<!-- FLAVORWIRE WINDOW -->
+<div class="xp-win front" id="fw-win">
+  <div class="titlebar" id="fw-bar">
+    <div class="tb-left"><div class="tb-ico">🔥</div>FlavorWire v5.2 — Supernode Mode</div>
+    <div class="wbtns">
+      <div class="wb min" onclick="minWin('fw')">—</div>
+      <div class="wb max" id="fw-maxbtn" onclick="maxWin('fw')">⬜</div>
+      <div class="wb cls" onclick="show('dlgErr')">✕</div>
+    </div>
+  </div>
+  <div class="inner">
+    <div class="banner" id="bannerAd"></div>
+    <div class="menubar">
+      <div class="mi">File</div><div class="mi">View</div><div class="mi">Tools</div><div class="mi">Options</div><div class="mi">Help</div>
+    </div>
+    <div class="toolbar">
+      <button class="tbtn">🔍 Search</button>
+      <button class="tbtn">📁 My Files</button>
+      <div class="tsep"></div>
+      <button class="tbtn" onclick="switchTab('downloads')">⬇ Downloads</button>
+      <button class="tbtn">⬆ Uploads</button>
+      <div class="tsep"></div>
+      <button class="tbtn">🔥 Top 50</button>
+      <div class="srchbar">
+        <label>Search:</label>
+        <input type="text" value="chickahhhhn ppxll mp3">
+        <button class="tbtn" style="font-weight:bold">GO</button>
+      </div>
+    </div>
+    <div class="fw-body">
+      <div class="sidebar">
+        <div class="sbh">My FlavorWire</div>
+        <div class="sbi act" onclick="switchTab('search')">🔍 Search</div>
+        <div class="sbi" onclick="switchTab('downloads')">📥 Downloads</div>
+        <div class="sbi">📤 Uploads</div>
+        <div class="sbi">🎵 My Media</div>
+        <div class="sbi">⭐ Favourites</div>
+        <div class="sbh">Network</div>
+        <div class="sbi">🌐 Supernode</div>
+        <div class="sbi">👥 Chat</div>
+        <div class="sbh">Tools</div>
+        <div class="sbi" ondblclick="openPlayer()">▶️ Media Player</div>
+      </div>
+      <div class="content">
+        <div class="tabs">
+          <div class="tab act" id="tab-search" onclick="switchTab('search')">Search Results</div>
+          <div class="tab" id="tab-downloads" onclick="switchTab('downloads')">Downloads (<span id="dl-count">0</span>)</div>
+          <div class="tab" id="tab-shared">My Shared Files</div>
+        </div>
+        <!-- SEARCH PANEL -->
+        <div class="panel act" id="panel-search">
+          <table class="ftbl">
+            <thead><tr><th>File Name</th><th>Size</th><th>Type</th><th>Sources</th><th>Speed</th><th>User</th></tr></thead>
+            <tbody id="searchRows"></tbody>
+          </table>
+          <div class="seclbl" style="margin-top:6px">⬇ Active Downloads</div>
+          <table class="ftbl">
+            <thead><tr><th>File Name</th><th>Size</th><th>Progress</th><th>Speed</th><th>Status</th></tr></thead>
+            <tbody id="dlQueue"><tr id="dl-ph"><td colspan="5" class="empty">No active downloads. Double-click a file above to start.</td></tr></tbody>
+          </table>
+          <div class="actbtns">
+            <button class="abtn p" onclick="startDlSelected()">⬇ Download</button>
+            <button class="abtn">🔍 More Results</button>
+            <button class="abtn">📋 File Info</button>
+          </div>
+        </div>
+        <!-- DOWNLOADS PANEL -->
+        <div class="panel" id="panel-downloads">
+          <div class="seclbl">📥 Completed Downloads</div>
+          <div class="dl-hint">💡 Click any file to open it in FlavorWire Player.</div>
+          <table class="ftbl">
+            <thead><tr><th>File Name</th><th>Size</th><th>Type</th><th>Status</th><th>Downloaded At</th></tr></thead>
+            <tbody id="completedList"><tr><td colspan="5" class="empty">No completed downloads yet.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="statbar">
+      <div class="sp"><span class="led"></span>Connected — Supernode</div>
+      <div class="sp">🌐 Users: 3,847,291</div>
+      <div class="sp">📁 Files: 412,887,034</div>
+      <div class="sp">⬆ 2 KB/s  ⬇ 3 KB/s</div>
+    </div>
+  </div>
+</div>
+
+<!-- PLAYER WINDOW -->
+<div class="xp-win hidden" id="player-win">
+  <div class="titlebar" id="player-bar">
+    <div class="tb-left"><div class="tb-ico">🎵</div>FlavorWire Player</div>
+    <div class="wbtns">
+      <div class="wb min" onclick="minWin('player')">—</div>
+      <div class="wb cls" onclick="closePlayer()">✕</div>
+    </div>
+  </div>
+  <div class="player-body">
+    <div class="nosong" id="noSong">
+      <div class="ni">🎵</div>
+      <p style="font-size:11px">No file loaded</p>
+      <small style="font-size:9px;color:#1e2e3e">Download a song in FlavorWire<br>to play it here</small>
+    </div>
+    <div id="songArea" style="display:none;flex-direction:column;gap:10px">
+      <div class="art">🎵<div class="art-scan"></div><div class="art-glow"></div></div>
+      <div class="sinfo">
+        <div class="stitle" id="pTitle">—</div>
+        <div class="sartist">PPxLL</div>
+        <div class="smeta">128 kbps · 44.1 kHz · Stereo · CDRip (LQ)</div>
+      </div>
+      <div class="viz" id="vizRow"></div>
+      <div>
+        <div class="seek-wrap">
+          <div class="seek-fill" id="seekFill" style="width:0%"></div>
+          <input class="seekbar" type="range" id="seekbar" min="0" max="1000" value="0">
+        </div>
+        <div class="seek-times"><span id="curT">0:00</span><span id="totT">0:00</span></div>
+      </div>
+      <div class="controls">
+        <button class="cbtn" onclick="seekRel(-10)" title="−10s">⏪</button>
+        <button class="cbtn" onclick="skipStart()" title="Restart">⏮</button>
+        <button class="cbtn playbtn" id="playBtn" onclick="togglePlay()">▶</button>
+        <button class="cbtn" onclick="seekRel(10)" title="+10s">⏩</button>
+        <button class="cbtn" style="opacity:.35;cursor:default">⏭</button>
+      </div>
+      <div class="vol-row">
+        <span class="vl">🔈</span>
+        <input class="volbar" type="range" id="volbar" min="0" max="100" value="80">
+        <span class="vl">🔊</span>
+      </div>
+    </div>
+  </div>
+  <div class="pfoot">
+    <div><span class="pled" id="pLed"></span><span id="pStatus">Idle</span></div>
+    <div>FlavorWire Player v1.0</div>
+  </div>
+</div>
+
+<audio id="audioEl"></audio>
+<div id="toast"></div>
+
+<!-- TASKBAR -->
+<div id="taskbar">
+  <button id="start-btn">🪟 start</button>
+  <div class="tb-btn vis act" id="tb-fw" onclick="focusWin('fw')">🔥 FlavorWire v5.2</div>
+  <div class="tb-btn" id="tb-player" onclick="focusWin('player')">🎵 Player</div>
+  <div id="tb-clock"></div>
+</div>
+
+<script>
+// ── HELPERS ──
+const $ = id => document.getElementById(id);
+function show(id){ $(id).classList.add('show'); }
+function hide(id){ $(id).classList.remove('show'); }
+
+// ── CLOCK ──
+(function tick(){
+  const n=new Date();
+  $('tb-clock').textContent=n.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+' · '+n.toLocaleDateString([],{month:'numeric',day:'numeric'})+'/2003';
+  setTimeout(tick,10000);
+})();
+
+// ── BANNER ──
+const BANNERS=[
+  {text:"📱 FREE RINGTONE DOWNLOAD!! Get the Church's Ringtone on your phone NOW — 100% FREE!!! | Click HERE!!!",bg:"linear-gradient(to right,#000080,#1a1a9a,#000080)",color:"#ffff00",fn:dlRingtone},
+  {text:"🎬 June 27 — PPxLL Video Release | BOOKMARK TODAY!!!",bg:"linear-gradient(to right,#8b0000,#cc0000,#8b0000)",color:"#fff",fn:()=>window.open('https://www.youtube.com','_blank')}
+];
+let bIdx=0;
+function rotateBanner(){
+  const el=$('bannerAd'),b=BANNERS[bIdx];
+  el.textContent=b.text; el.style.background=b.bg; el.style.color=b.color; el.onclick=b.fn;
+  bIdx=(bIdx+1)%BANNERS.length;
+}
+rotateBanner(); setInterval(rotateBanner,5000);
+
+// ── WINDOW MANAGER ──
+const WINS={
+  fw:{el:'fw-win',tb:'tb-fw',maxed:false,saved:null,vis:true},
+  player:{el:'player-win',tb:'tb-player',maxed:false,saved:null,vis:false}
+};
+function focusWin(k){
+  const w=WINS[k],el=$(w.el);
+  el.classList.remove('hidden');
+  el.style.visibility=''; el.style.pointerEvents='';
+  w.vis=true;
+  document.querySelectorAll('.xp-win').forEach(x=>x.classList.remove('front'));
+  el.classList.add('front');
+  document.querySelectorAll('.tb-btn').forEach(x=>x.classList.remove('act'));
+  $(w.tb).classList.add('act','vis');
+}
+function minWin(k){
+  const w=WINS[k],el=$(w.el);
+  el.style.visibility='hidden'; el.style.pointerEvents='none';
+  $(w.tb).classList.remove('act');
+}
+function maxWin(k){
+  const w=WINS[k],el=$(w.el);
+  if(!w.maxed){
+    w.saved={top:el.style.top,left:el.style.left,width:el.style.width,height:el.style.height};
+    el.style.cssText+='top:0!important;left:0!important;width:100vw!important;height:calc(100vh - 34px)!important;border-radius:0!important;resize:none!important;';
+    w.maxed=true; $('fw-maxbtn').textContent='❐';
+  } else {
+    const s=w.saved;
+    el.style.top=s.top||'20px'; el.style.left=s.left||'20px';
+    el.style.width=s.width||'800px'; el.style.height=s.height||'520px';
+    el.style.borderRadius=''; el.style.resize='both';
+    w.maxed=false; $('fw-maxbtn').textContent='⬜';
+  }
+}
+function closePlayer(){
+  $('player-win').classList.add('hidden');
+  $('tb-player').classList.remove('vis','act');
+  if(isPlaying){audioEl.pause();setPlayState(false);}
+}
+
+// ── DRAG ──
+if(window.innerWidth>768){
+  [['fw-bar','fw-win','fw'],['player-bar','player-win','player']].forEach(([barId,winId,k])=>{
+    const bar=$(barId),win=$(winId);
+    let on=false,ox=0,oy=0;
+    bar.style.cursor='move';
+    bar.addEventListener('mousedown',e=>{
+      if(e.target.classList.contains('wb'))return;
+      on=true; ox=e.clientX-win.offsetLeft; oy=e.clientY-win.offsetTop;
+      e.preventDefault(); focusWin(k);
+    });
+    document.addEventListener('mousemove',e=>{ if(!on)return; win.style.left=Math.max(-win.offsetWidth+80,Math.min(window.innerWidth-80,e.clientX-ox))+'px'; win.style.top=Math.max(0,Math.min(window.innerHeight-60,e.clientY-oy))+'px'; });
+    document.addEventListener('mouseup',()=>on=false);
+  });
+}
+
+// ── DESKTOP ICON SELECT ──
+function selIcon(id){ document.querySelectorAll('.d-icon').forEach(i=>i.classList.remove('sel')); $(id).classList.add('sel'); }
+
+// ── TABS ──
+function switchTab(t){
+  ['search','downloads'].forEach(id=>{
+    const tabId='tab-'+(id==='search'?'search':'downloads');
+    const panId='panel-'+(id==='search'?'search':'downloads');
+    $(tabId).classList.toggle('act',id===t);
+    $(panId).classList.toggle('act',id===t);
+  });
+  document.querySelectorAll('.sbi').forEach(s=>{
+    if(s.textContent.includes('Search')&&t==='search') s.classList.add('act');
+    else if(s.textContent.includes('Downloads')&&t==='downloads') s.classList.add('act');
+    else s.classList.remove('act');
+  });
+}
+
+// ── SONG DATA ──
+const SONG={name:'Chickahhhn_PPxLL_CDRip_(LQ)_06_27.mp3',size:'3.4 MB',type:'🎵 Audio',sources:12,pct:45,user:'jawn_gif',speed:'Dial-Up'};
+
+// ── RENDER SEARCH ──
+let selIdx=null, dlActive=false, completed=[];
+(function renderSearch(){
+  const tb=$('searchRows'); tb.innerHTML='';
+  const tr=document.createElement('tr');
+  tr.onclick=()=>{ document.querySelectorAll('#searchRows tr').forEach(r=>r.classList.remove('sel')); tr.classList.add('sel'); selIdx=0; };
+  tr.ondblclick=startDl;
+  tr.innerHTML=`<td><span class="fname">${SONG.name}</span></td><td>${SONG.size}</td><td>${SONG.type}</td><td><div class="prog-c"><div class="prog-f" style="width:${SONG.pct}%"></div></div> ${SONG.sources}</td><td>${SONG.speed}</td><td>${SONG.user}</td>`;
+  tb.appendChild(tr);
+})();
+
+function startDlSelected(){ if(selIdx===null){alert('Select a file first.');return;} startDl(); }
+function startDl(){
+  if(dlActive){alert(`"${SONG.name}" is already downloading.`);return;}
+  dlActive=true;
+  const ph=$('dl-ph'); if(ph) ph.remove();
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${SONG.name}</td><td>${SONG.size}</td><td><div class="prog-c" style="width:130px"><div class="prog-f tx" id="prog0" style="width:0%"></div></div> <span id="pct0">0%</span></td><td id="spd0">Connecting…</td><td id="sta0">🔄 Verifying…</td>`;
+  $('dlQueue').appendChild(tr);
+  animateDl();
+}
+
+// ── 30s ANIMATION ──
+function animateDl(){
+  let pct=0;
+  const TICK=400,INC=100/(30000/TICK);
+  const spds=['1.2 KB/s','2.4 KB/s','0.8 KB/s','1.6 KB/s','3.1 KB/s','0.5 KB/s','2.0 KB/s'];
+  const sts=['🔄 Downloading','⬇ Receiving','📡 Fetching parts','🔗 Connected x1','⬇ Buffering'];
+  const iv=setInterval(()=>{
+    pct+=INC*(0.6+Math.random()*.8); if(pct>=100)pct=100;
+    const pg=$('prog0'),pt=$('pct0'),sp=$('spd0'),st=$('sta0');
+    if(pg)pg.style.width=pct.toFixed(0)+'%';
+    if(pt)pt.textContent=pct.toFixed(0)+'%';
+    if(pct>=100){
+      clearInterval(iv);
+      if(sp)sp.textContent='—'; if(st)st.textContent='✅ Complete!';
+      if(pg){pg.classList.remove('tx');pg.style.background='linear-gradient(to bottom,#71cc35,#2d7008)';}
+      dlActive=false; onDlComplete();
+    } else {
+      if(sp)sp.textContent=spds[Math.floor(Math.random()*spds.length)];
+      if(st)st.textContent=sts[Math.floor(Math.random()*sts.length)];
+    }
+  },TICK);
+}
+
+// ── DOWNLOAD COMPLETE ──
+function onDlComplete(){
+  const now=new Date();
+  const ts=now.toLocaleDateString([],{month:'numeric',day:'numeric'})+'/2003 '+now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  completed.push({name:SONG.name,size:SONG.size,type:SONG.type,at:ts});
+  $('dl-count').textContent=completed.length;
+  renderCompleted();
+  showToast('💾 Saving to Desktop…');
+  setTimeout(()=>{
+    $('ico-song').style.display='block';
+    $('ico-song-lbl').textContent='Chickahhhn_PPxLL\nCDRip_(LQ)_06_27';
+    showToast('✅ Saved to Desktop!');
+    setTimeout(()=>{ hideToast(); openPlayerWithSong(); },1400);
+  },1600);
+}
+
+// ── TOAST ──
+let toastT=null;
+function showToast(msg){ const t=$('toast'); t.textContent=msg; t.style.display='block'; clearTimeout(toastT); }
+function hideToast(){ const t=$('toast'); t.style.opacity='0'; toastT=setTimeout(()=>{t.style.display='none';t.style.opacity='1';},300); }
+
+// ── COMPLETED LIST ──
+function renderCompleted(){
+  const tb=$('completedList');
+  if(!completed.length){tb.innerHTML='<tr><td colspan="5" class="empty">No completed downloads yet.</td></tr>';return;}
+  tb.innerHTML='';
+  completed.forEach(d=>{
+    const tr=document.createElement('tr');
+    tr.style.cursor='pointer'; tr.onclick=openPlayerWithSong;
+    tr.innerHTML=`<td><span class="fname">${d.name}</span></td><td>${d.size}</td><td>${d.type}</td><td><span class="badge-done">✅ DONE</span></td><td>${d.at}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ── AUDIO (Web Audio API, ~30s ambient) ──
+const audioEl=$('audioEl');
+let audioReady=false;
+async function genAudio(){
+  try{
+    const sr=44100,dur=30,ctx=new OfflineAudioContext(2,sr*dur,sr);
+    [[110,.018],[165,.014],[220,.012],[277,.010],[330,.008],[440,.007]].forEach(([f,g])=>{
+      const o=ctx.createOscillator(),gn=ctx.createGain();
+      o.type='sine'; o.frequency.value=f; gn.gain.value=g;
+      o.connect(gn); gn.connect(ctx.destination); o.start(); o.stop(dur);
+    });
+    const buf=await ctx.startRendering();
+    const blob=bufToWav(buf);
+    audioEl.src=URL.createObjectURL(blob); audioEl.load(); audioReady=true;
+  }catch(e){console.warn('audio gen:',e);}
+}
+function bufToWav(buf){
+  const ch=buf.numberOfChannels,sr=buf.sampleRate,n=buf.length,ds=n*ch*2,ab=new ArrayBuffer(44+ds),v=new DataView(ab);
+  const ws=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};
+  ws(0,'RIFF');v.setUint32(4,36+ds,true);ws(8,'WAVE');ws(12,'fmt ');v.setUint32(16,16,true);
+  v.setUint16(20,1,true);v.setUint16(22,ch,true);v.setUint32(24,sr,true);v.setUint32(28,sr*ch*2,true);
+  v.setUint16(32,ch*2,true);v.setUint16(34,16,true);ws(36,'data');v.setUint32(40,ds,true);
+  let off=44;
+  for(let i=0;i<n;i++)for(let c=0;c<ch;c++){const s=Math.max(-1,Math.min(1,buf.getChannelData(c)[i]));v.setInt16(off,s<0?s*0x8000:s*0x7FFF,true);off+=2;}
+  return new Blob([ab],{type:'audio/wav'});
+}
+genAudio();
+
+// ── PLAYER ──
+let songLoaded=false,isPlaying=false,vizIv=null;
+
+function openPlayer(){
+  const el=$('player-win'),tb=$('tb-player');
+  el.classList.remove('hidden');
+  el.style.visibility=''; el.style.pointerEvents='';
+  if(!el.style.left){ el.style.left=Math.min(window.innerWidth-380,840)+'px'; el.style.top='60px'; }
+  tb.classList.add('vis'); focusWin('player');
+}
+function openPlayerWithSong(){ openPlayer(); if(!songLoaded)loadSong(); }
+
+function loadSong(){
+  songLoaded=true;
+  $('noSong').style.display='none';
+  const sa=$('songArea'); sa.style.display='flex';
+  $('pTitle').textContent=SONG.name.replace(/_/g,' ');
+  $('pStatus').textContent='Ready';
+  initViz();
+  audioEl.addEventListener('loadedmetadata',()=>{$('totT').textContent=fmt(audioEl.duration);});
+  audioEl.addEventListener('timeupdate',updateSeek);
+  audioEl.addEventListener('ended',()=>{setPlayState(false);$('pStatus').textContent='Finished';});
+  $('seekbar').addEventListener('input',e=>{if(audioEl.duration)audioEl.currentTime=(e.target.value/1000)*audioEl.duration;});
+  $('volbar').addEventListener('input',e=>{audioEl.volume=e.target.value/100;});
+  audioEl.volume=0.8;
+}
+
+function fmt(s){if(!isFinite(s))return'0:00';return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');}
+function updateSeek(){
+  if(!audioEl.duration)return;
+  const p=(audioEl.currentTime/audioEl.duration)*1000;
+  $('seekbar').value=p; $('seekFill').style.width=(p/10)+'%';
+  $('curT').textContent=fmt(audioEl.currentTime);
+}
+function seekRel(d){if(!songLoaded)return;audioEl.currentTime=Math.max(0,Math.min(audioEl.duration||0,audioEl.currentTime+d));}
+function skipStart(){if(!songLoaded)return;audioEl.currentTime=0;}
+function setPlayState(playing){
+  isPlaying=playing;
+  const btn=$('playBtn'),led=$('pLed');
+  btn.textContent=playing?'⏸':'▶';
+  btn.classList.toggle('playing',playing);
+  led.classList.toggle('on',playing);
+  $('pStatus').textContent=playing?'Playing':'Paused';
+  playing?startViz():stopViz();
+}
+function togglePlay(){
+  if(!songLoaded)return;
+  if(isPlaying){audioEl.pause();setPlayState(false);}
+  else{audioEl.play();setPlayState(true);}
+}
+function initViz(){const vr=$('vizRow');vr.innerHTML='';for(let i=0;i<20;i++){const b=document.createElement('div');b.className='vb';b.style.height='2px';vr.appendChild(b);}}
+function startViz(){stopViz();vizIv=setInterval(()=>document.querySelectorAll('.vb').forEach(b=>b.style.height=(2+Math.random()*22)+'px'),90);}
+function stopViz(){clearInterval(vizIv);vizIv=null;document.querySelectorAll('.vb').forEach(b=>b.style.height='2px');}
+
+// ── RINGTONE ──
+function dlRingtone(){
+  const blob=new Blob(["FlavorWire v5.2 — FREE RINGTONE\r\nThe Church's Ringtone\r\n[Replace with real audio]\r\n"],{type:'text/plain'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url; a.download='TheChurch_Ringtone_FREE.mp3';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),150);
+}
+</script>
+</body>
+</html>
